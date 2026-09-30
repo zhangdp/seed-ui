@@ -12,6 +12,12 @@ export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
     name: import.meta.env.VITE_APP_TITLE,
+    // 菜单与路由由后端返回
+    accessMode: 'backend',
+    defaultHomePath: '/system/user',
+    // 后端支持刷新令牌，开启后 accessToken 过期会自动续签
+    enableRefreshToken: true,
+    loginExpiredMode: 'modal',
   },
   copyright: appCopyrightPreferences,
 });

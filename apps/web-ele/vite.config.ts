@@ -13,11 +13,11 @@ export default defineConfig(async () => {
       ],
       server: {
         proxy: {
+          // 本地 seed 后端（默认 http://localhost:8080）
           '/api': {
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/api/, ''),
-            // mock代理目标地址
-            target: 'http://localhost:5320/api',
+            target: 'http://localhost:8080',
             ws: true,
           },
         },

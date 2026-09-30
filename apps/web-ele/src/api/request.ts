@@ -50,9 +50,13 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
    */
   async function doRefreshToken() {
     const accessStore = useAccessStore();
-    const resp = await refreshTokenApi();
-    const newToken = resp.data;
+    // 后端返回的是 LoginResult，访问令牌在 accessToken 字段上
+    const result = await refreshTokenApi();
+    const newToken = result?.accessToken;
     accessStore.setAccessToken(newToken);
+    if (result?.refreshToken) {
+      accessStore.setRefreshToken(result.refreshToken);
+    }
     return newToken;
   }
 
@@ -94,10 +98,13 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(
     errorMessageResponseInterceptor((msg: string, error) => {
-      // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
-      // 当前mock接口返回的错误字段是 error 或者 message
+      // 后端统一响应体为 { code, message, data }，优先展示后端返回的业务提示
       const responseData = error?.response?.data ?? {};
-      const errorMessage = responseData?.error ?? responseData?.message ?? '';
+      const errorMessage = responseData?.message ?? responseData?.error ?? '';
+      // 401 由认证拦截器统一处理（刷新令牌或重新登录），此处不再重复提示
+      if (error?.response?.status === 401) {
+        return;
+      }
       // 如果没有错误信息，则会根据状态码进行提示
       ElMessage.error(errorMessage || msg);
     }),
@@ -110,4 +117,8 @@ export const requestClient = createRequestClient(apiURL, {
   responseReturn: 'data',
 });
 
-export const baseRequestClient = new RequestClient({ baseURL: apiURL });
+// 未注册解包拦截器，返回后端原始响应体 { code, message, data }
+export const baseRequestClient = new RequestClient({
+  baseURL: apiURL,
+  responseReturn: 'body',
+});

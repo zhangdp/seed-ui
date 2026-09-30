@@ -1,3 +1,4 @@
+import type { PermissionTreeNode } from '#/types/api';
 import type { Recordable, UserInfo } from '@vben/types';
 
 import { ref } from 'vue';
@@ -10,8 +11,33 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import {
+  getAccessCodesApi,
+  getUserInfoApi,
+  getUserMenusApi,
+  loginByPasswordApi,
+  loginBySmsApi,
+  logoutApi,
+} from '#/api';
 import { $t } from '#/locales';
+
+/**
+ * 从菜单树中解析首页地址：取第一个可访问（带组件）的菜单
+ */
+function resolveHomePath(menus?: PermissionTreeNode[]): string {
+  const walk = (nodes?: PermissionTreeNode[]): string | undefined => {
+    for (const node of nodes ?? []) {
+      if (node.component && node.path) {
+        return node.path;
+      }
+      const childPath = walk(node.children);
+      if (childPath) {
+        return childPath;
+      }
+    }
+  };
+  return walk(menus) ?? preferences.app.defaultHomePath;
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
@@ -22,32 +48,40 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * 异步处理登录操作
-   * Asynchronously handle the login process
    * @param params 登录表单数据
+   * @param onSuccess 登录成功后的回调
    */
   async function authLogin(
     params: Recordable<any>,
     onSuccess?: () => Promise<void> | void,
   ) {
-    // 异步处理用户登录操作并获取 accessToken
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { accessToken } = await loginApi(params);
+      // sms 为 true 时走短信验证码登录，否则为密码登录
+      const result = params.sms
+        ? await loginBySmsApi({
+            code: params.code,
+            mobile: params.mobile,
+          })
+        : await loginByPasswordApi({
+            captchaKey: params.captchaKey ?? params.captcha?.key,
+            code: params.code ?? params.captcha?.code,
+            password: params.password,
+            username: params.username,
+          });
 
-      // 如果成功获取到 accessToken
-      if (accessToken) {
-        // 将 accessToken 存储到 accessStore 中
-        accessStore.setAccessToken(accessToken);
+      if (result?.accessToken) {
+        accessStore.setAccessToken(result.accessToken);
+        accessStore.setRefreshToken(result.refreshToken);
 
-        // 获取用户信息并存储到 accessStore 中
-        const [fetchUserInfoResult, accessCodes] = await Promise.all([
+        const [profile, accessCodes, menus] = await Promise.all([
           fetchUserInfo(),
           getAccessCodesApi(),
+          getUserMenusApi(),
         ]);
 
-        userInfo = fetchUserInfoResult;
-
+        userInfo = { ...profile, homePath: resolveHomePath(menus) };
         userStore.setUserInfo(userInfo);
         accessStore.setAccessCodes(accessCodes);
 
@@ -73,29 +107,22 @@ export const useAuthStore = defineStore('auth', () => {
       loginLoading.value = false;
     }
 
-    return {
-      userInfo,
-    };
+    return { userInfo };
   }
 
   async function logout(redirect: boolean = true) {
     try {
       await logoutApi();
     } catch {
-      // 不做任何处理
+      // 无论服务端结果如何，前端都当做注销成功
     }
     resetAllStores();
     accessStore.setLoginExpired(false);
 
-    // 已经在登录页时不能再带 redirect：此时 currentRoute.fullPath 就是登录页本身，
-    // 再编码一层会得到「登录页?redirect=编码后的登录页」，下一次又在这个基础上再包一层，
-    // 反复登出会让 URL 逐跳变长，且没有上限。
-    // On the login page the current route is the login page itself, so carrying it as
-    // `redirect` would nest one more encoded layer on every repeat.
+    // 已经在登录页时不能再带 redirect：否则反复登出会让 URL 逐跳变长
     const currentRoute = router.currentRoute.value;
     const alreadyOnLogin = currentRoute.path === LOGIN_PATH;
 
-    // 回登录页带上当前路由地址
     await router.replace({
       path: LOGIN_PATH,
       query:
@@ -105,8 +132,21 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
-  async function fetchUserInfo() {
-    const userInfo = await getUserInfoApi();
+  /**
+   * 获取并转换当前登录用户信息
+   */
+  async function fetchUserInfo(): Promise<UserInfo> {
+    const info = await getUserInfoApi();
+    const userInfo: UserInfo = {
+      avatar: info.avatar ?? '',
+      desc: info.dept?.name ?? '',
+      homePath: preferences.app.defaultHomePath,
+      realName: info.name || info.username || '',
+      roles: info.roles?.map((role) => role.code ?? '') ?? [],
+      token: accessStore.accessToken ?? '',
+      userId: String(info.id ?? ''),
+      username: info.username ?? '',
+    };
     userStore.setUserInfo(userInfo);
     return userInfo;
   }
