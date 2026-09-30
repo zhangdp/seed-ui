@@ -1,0 +1,363 @@
+/* ==========================================================================
+   Seed 视觉层
+   目标：弱化传统后台表格的密集与刻板感，统一圆角、留白、层次，
+        让页面更接近"给用户用的产品"而不是"给管理员用的控制台"
+   说明：颜色全部取自 vben 设计令牌（--card/--border/--foreground 等），
+        亮色/暗色主题自动适配
+   ========================================================================== */
+
+:root {
+  --seed-radius: 16px;
+  --seed-radius-sm: 10px;
+  --seed-card: var(--card, #fff);
+  --seed-border: var(--border, rgba(15, 23, 42, 0.08));
+  --seed-border-soft: color-mix(in srgb, var(--border, #94a3b8) 55%, transparent);
+  --seed-muted: var(--muted-foreground, #6b7280);
+  --seed-title: var(--foreground, #0f172a);
+  --seed-body: color-mix(in srgb, var(--foreground, #0f172a) 88%, transparent);
+  --seed-subtle: color-mix(in srgb, var(--foreground, #0f172a) 4%, transparent);
+  --seed-hover: color-mix(in srgb, var(--primary, #4f6ef7) 7%, transparent);
+  --seed-brand: var(--primary, #4f6ef7);
+  --seed-brand-soft: color-mix(in srgb, var(--primary, #4f6ef7) 14%, transparent);
+  --seed-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 10px 30px -18px rgba(15, 23, 42, 0.25);
+
+  /* 语义色（亮/暗主题下都可读） */
+  --seed-success: #16a374;
+  --seed-success-soft: rgba(22, 163, 116, 0.14);
+  --seed-danger: #e0564f;
+  --seed-danger-soft: rgba(224, 86, 79, 0.14);
+  --seed-warning: #cf8a1c;
+  --seed-warning-soft: rgba(207, 138, 28, 0.16);
+}
+
+.dark {
+  --seed-success: #34d399;
+  --seed-danger: #f87171;
+  --seed-warning: #fbbf24;
+  --seed-shadow: 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 10px 30px -18px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------- 页面容器 ------------------------------- */
+
+.seed-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 通用卡片 */
+.seed-card {
+  background: var(--seed-card);
+  border: 1px solid var(--seed-border);
+  border-radius: var(--seed-radius);
+  box-shadow: var(--seed-shadow);
+}
+
+.seed-card-pad {
+  padding: 18px 20px;
+}
+
+/* 分区标题 */
+.seed-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--seed-title);
+  letter-spacing: 0.2px;
+}
+
+.seed-section-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--seed-muted);
+}
+
+/* ------------------------------- 数据表格 ------------------------------- */
+
+/* 表格卡片：更大的圆角、柔和阴影 */
+.seed-table {
+  border-radius: var(--seed-radius) !important;
+  border: 1px solid var(--seed-border);
+  box-shadow: var(--seed-shadow);
+  overflow: hidden;
+}
+
+/* 筛选区：浅色底的圆角面板，不再是"表单"观感 */
+.seed-table .vxe-grid--form-wrapper {
+  margin: 0;
+  padding: 14px 16px 2px;
+  background: var(--seed-subtle);
+  border-radius: var(--seed-radius) var(--seed-radius) 0 0;
+}
+
+.seed-table .vxe-grid--form-wrapper form {
+  margin: 0;
+}
+
+/* 工具栏 */
+.seed-table .vxe-grid--toolbar-wrapper {
+  padding: 12px 16px;
+  border: 0 !important;
+  background: transparent;
+}
+
+.seed-table .vxe-grid--table-wrapper {
+  padding: 0 8px;
+}
+
+/* 表头：去掉强边框，改为淡底 + 细分割线 */
+.seed-table .vxe-table--header-wrapper {
+  background: transparent;
+}
+
+.seed-table .vxe-table .vxe-header--column {
+  height: 46px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--seed-muted);
+  background: var(--seed-subtle);
+  border: 0;
+  border-bottom: 1px solid var(--seed-border-soft);
+  letter-spacing: 0.3px;
+}
+
+.seed-table .vxe-table .vxe-header--column:first-child {
+  border-top-left-radius: var(--seed-radius-sm);
+  border-bottom-left-radius: var(--seed-radius-sm);
+}
+
+.seed-table .vxe-table .vxe-header--column:last-child {
+  border-top-right-radius: var(--seed-radius-sm);
+  border-bottom-right-radius: var(--seed-radius-sm);
+}
+
+/* 表体：更高的行高、更轻的分割线 */
+.seed-table .vxe-table .vxe-body--column {
+  height: 60px;
+  padding: 4px 12px;
+  font-size: 13.5px;
+  color: var(--seed-body);
+  border: 0;
+  border-bottom: 1px solid var(--seed-border-soft);
+}
+
+.seed-table .vxe-table .vxe-cell {
+  line-height: 1.4;
+}
+
+.seed-table .vxe-table .vxe-body--row:hover .vxe-body--column {
+  background: var(--seed-hover);
+}
+
+/* 分页 */
+.seed-table .vxe-grid--pager-wrapper {
+  padding: 12px 16px 14px;
+  border: 0 !important;
+}
+
+.seed-table .vxe-pager {
+  background: transparent;
+  font-size: 13px;
+  color: var(--seed-muted);
+}
+
+.seed-table .vxe-pager .vxe-pager--num-btn,
+.seed-table .vxe-pager .vxe-pager--jump-btn {
+  border-radius: 8px;
+  border: 1px solid var(--seed-border);
+  background: transparent;
+  color: var(--seed-body);
+}
+
+.seed-table .vxe-pager .is--active {
+  background: var(--seed-brand) !important;
+  border-color: var(--seed-brand) !important;
+  color: #fff !important;
+}
+
+/* 空状态 */
+.seed-table .vxe-table--empty-placeholder,
+.seed-table .vxe-table--empty-block {
+  color: var(--seed-muted);
+}
+
+/* ------------------------------- 单元格元素 ---------------------------- */
+
+/* 头像圆标 */
+.seed-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--seed-brand-soft);
+  color: var(--seed-brand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 胶囊标签 */
+.seed-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--seed-subtle);
+  color: var(--seed-body);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.seed-chip--primary {
+  background: var(--seed-brand-soft);
+  color: var(--seed-brand);
+}
+
+.seed-chip--success {
+  background: var(--seed-success-soft);
+  color: var(--seed-success);
+}
+
+.seed-chip--danger {
+  background: var(--seed-danger-soft);
+  color: var(--seed-danger);
+}
+
+.seed-chip--warning {
+  background: var(--seed-warning-soft);
+  color: var(--seed-warning);
+}
+
+/* 状态点 */
+.seed-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--seed-success);
+  vertical-align: middle;
+}
+
+.seed-dot--off {
+  background: var(--seed-danger);
+}
+
+/* 单元格主/副文本 */
+.seed-cell-main {
+  font-weight: 500;
+  color: var(--seed-title);
+}
+
+.seed-cell-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--seed-muted);
+}
+
+/* ------------------------------- 卡片式布局 ---------------------------- */
+
+.seed-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.seed-tile {
+  position: relative;
+  padding: 18px;
+  background: var(--seed-card);
+  border: 1px solid var(--seed-border);
+  border-radius: var(--seed-radius);
+  box-shadow: var(--seed-shadow);
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.seed-tile:hover {
+  border-color: color-mix(in srgb, var(--seed-brand) 45%, transparent);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 14px 34px -16px color-mix(in srgb, var(--seed-brand) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+/* 左右分栏（字典管理用） */
+.seed-split {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (width <= 900px) {
+  .seed-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 列表项（替代表格的轻列表） */
+.seed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seed-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--seed-radius-sm);
+  color: var(--seed-body);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.seed-list-item:hover {
+  background: var(--seed-subtle);
+}
+
+.seed-list-item--active {
+  background: var(--seed-brand-soft);
+  color: var(--seed-brand);
+  font-weight: 500;
+  box-shadow: inset 3px 0 0 var(--seed-brand);
+}
+
+/* 空态 */
+.seed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 56px 20px;
+  color: var(--seed-muted);
+}
+
+/* ------------------------------- 小工具 -------------------------------- */
+
+.seed-row-actions {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.seed-mono {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 12.5px;
+}
+
+.seed-muted {
+  color: var(--seed-muted);
+}

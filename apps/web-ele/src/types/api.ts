@@ -86,7 +86,7 @@ interface PermissionTreeNode extends TreeNode {
 }
 
 /** 部门树节点 */
-interface DeptTreeNode extends TreeNode {}
+type DeptTreeNode = TreeNode;
 
 /** 角色 */
 interface Role {
@@ -96,13 +96,36 @@ interface Role {
   name?: string;
 }
 
+/** 字典 */
+interface Dict {
+  description?: string;
+  id?: number;
+  /** 是否系统内置，1：是 */
+  isSystem?: number;
+  name?: string;
+  /** 字典类型 */
+  type?: string;
+}
+
+/** 字典项 */
+interface DictData {
+  description?: string;
+  dictId?: number;
+  id?: number;
+  label?: string;
+  /** 扩展数据（JSON 字符串） */
+  metaData?: string;
+  sorts?: number;
+  value?: string;
+}
+
 /** 部门 */
 interface Dept {
   /** 树形表格子节点 */
   children?: Dept[];
   id?: number;
   name?: string;
-  parentId?: number | null;
+  parentId?: null | number;
   sorts?: number;
 }
 
@@ -158,7 +181,7 @@ interface Permission {
   id?: number;
   keepAlive?: number;
   name?: string;
-  parentId?: number | null;
+  parentId?: null | number;
   path?: string;
   sorts?: number;
   /** menu：菜单；button：按钮 */
@@ -226,6 +249,11 @@ interface SmsLog {
   templateCode?: string;
 }
 
+/** 通用文本查询条件（角色、字典、配置等） */
+interface TextQuery {
+  query?: string;
+}
+
 /** 图形验证码 */
 interface ImageCaptcha {
   /** 带 data:image/png;base64, 前缀，可直接用于 img 的 src */
@@ -239,6 +267,8 @@ export type {
   CursorPageQuery,
   Dept,
   DeptTreeNode,
+  Dict,
+  DictData,
   ImageCaptcha,
   LoginLog,
   LoginResult,
@@ -251,5 +281,6 @@ export type {
   SmsLog,
   SysConfig,
   SysUser,
+  TextQuery,
   UserQuery,
 };

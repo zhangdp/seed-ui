@@ -1,12 +1,19 @@
 <script lang="ts" setup>
-import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { SysConfig } from '#/types/api';
+
+import { onMounted, ref } from 'vue';
 
 import { useAccess } from '@vben/access';
 import { Page, useVbenForm, useVbenModal, z } from '@vben/common-ui';
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus';
 
-import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  ElButton,
+  ElEmpty,
+  ElInput,
+  ElMessage,
+  ElMessageBox,
+} from 'element-plus';
+
 import {
   addConfigApi,
   deleteConfigApi,
@@ -18,51 +25,23 @@ defineOptions({ name: 'SystemConfig' });
 
 const { hasAccessByCodes } = useAccess();
 
-const gridOptions: VxeGridProps<SysConfig> = {
-  columns: [
-    { title: '序号', type: 'seq', width: 60 },
-    { field: 'configKey', minWidth: 180, title: '参数键' },
-    { field: 'configValue', minWidth: 200, title: '参数值' },
-    { field: 'description', minWidth: 200, title: '描述' },
-    {
-      field: 'isEncrypted',
-      formatter: ({ cellValue }: { cellValue: any }) =>
-        cellValue === 1 ? '是' : '否',
-      title: '加密',
-      width: 90,
-    },
-    {
-      field: 'isSystem',
-      formatter: ({ cellValue }: { cellValue: any }) =>
-        cellValue === 1 ? '是' : '否',
-      title: '系统内置',
-      width: 100,
-    },
-    {
-      field: 'operation',
-      fixed: 'right',
-      slots: { default: 'operation' },
-      title: '操作',
-      width: 160,
-    },
-  ],
-  keepSource: true,
-  pagerConfig: {},
-  proxyConfig: {
-    ajax: {
-      query: async ({ page }) => {
-        return await getConfigPageApi({
-          page: page.currentPage,
-          size: page.pageSize,
-        });
-      },
-    },
-    response: { list: 'list', result: 'list', total: 'total' },
-  },
-  toolbarConfig: { refresh: true },
-};
+const list = ref<SysConfig[]>([]);
+const loading = ref(false);
+const keyword = ref('');
 
-const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
+async function loadList() {
+  loading.value = true;
+  try {
+    const data = await getConfigPageApi({
+      page: 1,
+      params: { query: keyword.value || undefined },
+      size: 200,
+    });
+    list.value = data.list ?? [];
+  } finally {
+    loading.value = false;
+  }
+}
 
 /* ------------------------------ 新增/编辑 ------------------------------ */
 
@@ -119,7 +98,7 @@ const [Modal, modalApi] = useVbenModal({
     if (success) {
       ElMessage.success(id ? '修改成功' : '新增成功');
       modalApi.close();
-      gridApi.reload();
+      loadList();
     }
   },
   onOpenChange(isOpen: boolean) {
@@ -130,6 +109,10 @@ const [Modal, modalApi] = useVbenModal({
     formApi.resetForm();
     if (data?.id) {
       formApi.setValues(data);
+      // 参数键不允许修改
+      formApi.updateSchema([{ disabled: true, fieldName: 'configKey' }]);
+    } else {
+      formApi.updateSchema([{ disabled: false, fieldName: 'configKey' }]);
     }
   },
   title: '参数配置',
@@ -147,42 +130,103 @@ async function handleDelete(row: SysConfig) {
   const success = await deleteConfigApi(row.id as number);
   if (success) {
     ElMessage.success('删除成功');
-    gridApi.reload();
+    loadList();
   }
 }
+
+onMounted(loadList);
 </script>
 
 <template>
-  <Page auto-content-height>
-    <Grid>
-      <template #toolbar-tools>
-        <ElButton
-          v-if="hasAccessByCodes(['sys:config:create'])"
-          type="primary"
-          @click="openModal()"
+  <Page
+    auto-content-height
+    description="系统运行参数的集中配置，修改后即时生效"
+    title="参数管理"
+  >
+    <div class="seed-page">
+      <!-- 工具条 -->
+      <div class="seed-card seed-card-pad flex items-center justify-between">
+        <div>
+          <div class="seed-section-title">参数列表</div>
+          <div class="seed-section-desc">
+            共 {{ list.length }} 项配置，键名不区分大小写
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <ElInput
+            v-model="keyword"
+            clearable
+            placeholder="搜索参数键"
+            style="width: 220px"
+            @keyup.enter="loadList"
+            @clear="loadList"
+          />
+          <ElButton @click="loadList">查询</ElButton>
+          <ElButton
+            v-if="hasAccessByCodes(['sys:config:create'])"
+            type="primary"
+            @click="openModal()"
+          >
+            新增参数
+          </ElButton>
+        </div>
+      </div>
+
+      <!-- 卡片列表 -->
+      <div v-loading="loading" class="seed-grid-cards">
+        <div v-for="item in list" :key="item.id" class="seed-tile">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="seed-mono seed-cell-main truncate">
+                {{ item.configKey }}
+              </div>
+              <div class="seed-cell-sub mt-1 break-all">
+                {{ item.description || '暂无描述' }}
+              </div>
+            </div>
+            <span
+              v-if="item.isSystem === 1"
+              class="seed-chip seed-chip--warning"
+            >
+              系统内置
+            </span>
+          </div>
+
+          <div class="mt-4 flex items-center justify-between">
+            <div class="seed-mono truncate pr-2 text-[13px] text-[#374151]">
+              {{ item.configValue }}
+            </div>
+            <div class="seed-row-actions shrink-0">
+              <ElButton
+                v-if="hasAccessByCodes(['sys:config:update'])"
+                link
+                type="primary"
+                @click="openModal(item)"
+              >
+                编辑
+              </ElButton>
+              <ElButton
+                v-if="
+                  hasAccessByCodes(['sys:config:delete']) && item.isSystem !== 1
+                "
+                link
+                type="danger"
+                @click="handleDelete(item)"
+              >
+                删除
+              </ElButton>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="!list.length && !loading"
+          class="seed-card seed-card-pad seed-empty"
         >
-          新增参数
-        </ElButton>
-      </template>
-      <template #operation="{ row }">
-        <ElButton
-          v-if="hasAccessByCodes(['sys:config:update'])"
-          link
-          type="primary"
-          @click="openModal(row)"
-        >
-          编辑
-        </ElButton>
-        <ElButton
-          v-if="hasAccessByCodes(['sys:config:delete'])"
-          link
-          type="danger"
-          @click="handleDelete(row)"
-        >
-          删除
-        </ElButton>
-      </template>
-    </Grid>
+          <ElEmpty description="还没有配置项" />
+        </div>
+      </div>
+    </div>
 
     <Modal class="w-[520px]">
       <Form />

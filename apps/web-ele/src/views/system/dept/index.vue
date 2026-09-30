@@ -6,10 +6,16 @@ import { ref } from 'vue';
 
 import { useAccess } from '@vben/access';
 import { Page, useVbenForm, useVbenModal, z } from '@vben/common-ui';
+
 import { ElButton, ElMessage, ElMessageBox } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { addDeptApi, deleteDeptApi, getDeptTreeApi, updateDeptApi } from '#/api';
+import {
+  addDeptApi,
+  deleteDeptApi,
+  getDeptTreeApi,
+  updateDeptApi,
+} from '#/api';
 
 defineOptions({ name: 'SystemDept' });
 
@@ -29,8 +35,15 @@ function toRows(nodes: DeptTreeNode[]): Dept[] {
 }
 
 const gridOptions: VxeGridProps<Dept> = {
+  align: 'left',
   columns: [
-    { field: 'name', minWidth: 220, title: '部门名称', treeNode: true },
+    {
+      field: 'name',
+      minWidth: 240,
+      slots: { default: 'name' },
+      title: '部门名称',
+      treeNode: true,
+    },
     { field: 'sorts', title: '排序', width: 100 },
     { field: 'id', title: 'ID', width: 120 },
     {
@@ -137,9 +150,7 @@ async function handleDelete(row: Dept) {
 async function loadTree() {
   try {
     const tree = await getDeptTreeApi();
-    treeData.value = [
-      { children: toRows(tree), label: '根节点', value: 0 },
-    ];
+    treeData.value = [{ children: toRows(tree), label: '根节点', value: 0 }];
   } catch {
     treeData.value = [{ children: [], label: '根节点', value: 0 }];
   }
@@ -150,8 +161,12 @@ async function loadTree() {
 </script>
 
 <template>
-  <Page auto-content-height>
-    <Grid>
+  <Page
+    auto-content-height
+    description="以层级方式维护组织架构，支持无限级子部门"
+    title="部门管理"
+  >
+    <Grid class="seed-table">
       <template #toolbar-tools>
         <ElButton
           v-if="hasAccessByCodes(['sys:dept:create'])"
@@ -160,6 +175,14 @@ async function loadTree() {
         >
           新增部门
         </ElButton>
+      </template>
+      <template #name="{ row }">
+        <div class="flex items-center gap-2">
+          <span class="seed-avatar seed-chip--primary">
+            {{ (row.name ?? '?').slice(0, 1) }}
+          </span>
+          <span class="seed-cell-main">{{ row.name }}</span>
+        </div>
       </template>
       <template #operation="{ row }">
         <ElButton

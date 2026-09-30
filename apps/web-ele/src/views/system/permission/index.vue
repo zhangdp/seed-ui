@@ -6,7 +6,8 @@ import { ref } from 'vue';
 
 import { useAccess } from '@vben/access';
 import { Page, useVbenForm, useVbenModal, z } from '@vben/common-ui';
-import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus';
+
+import { ElButton, ElMessage, ElMessageBox } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -45,9 +46,15 @@ function toRows(nodes: PermissionTreeNode[]): Permission[] {
 }
 
 const gridOptions: VxeGridProps<Permission> = {
+  align: 'left',
   columns: [
-    { field: 'name', minWidth: 180, title: '名称', treeNode: true },
-    { field: 'code', minWidth: 180, title: '权限标识' },
+    { field: 'name', minWidth: 200, title: '名称', treeNode: true },
+    {
+      field: 'code',
+      minWidth: 200,
+      slots: { default: 'code' },
+      title: '权限标识',
+    },
     {
       field: 'type',
       minWidth: 90,
@@ -59,10 +66,9 @@ const gridOptions: VxeGridProps<Permission> = {
     { field: 'sorts', title: '排序', width: 80 },
     {
       field: 'visible',
-      formatter: ({ cellValue }: { cellValue: any }) =>
-        cellValue === 0 ? '隐藏' : '显示',
+      minWidth: 90,
+      slots: { default: 'visible' },
       title: '显示',
-      width: 90,
     },
     {
       field: 'operation',
@@ -195,9 +201,7 @@ const [Modal, modalApi] = useVbenModal({
 async function loadTree() {
   try {
     const tree = await getPermissionTreeApi();
-    treeData.value = [
-      { children: toRows(tree), label: '根节点', value: 0 },
-    ];
+    treeData.value = [{ children: toRows(tree), label: '根节点', value: 0 }];
   } catch {
     treeData.value = [{ children: [], label: '根节点', value: 0 }];
   }
@@ -225,8 +229,12 @@ async function handleDelete(row: Permission) {
 </script>
 
 <template>
-  <Page auto-content-height>
-    <Grid>
+  <Page
+    auto-content-height
+    description="菜单与按钮的权限标识，决定侧边栏结构与按钮显隐"
+    title="权限管理"
+  >
+    <Grid class="seed-table">
       <template #toolbar-tools>
         <ElButton
           v-if="hasAccessByCodes(['sys:permission:create'])"
@@ -236,10 +244,26 @@ async function handleDelete(row: Permission) {
           新增权限
         </ElButton>
       </template>
+      <template #code="{ row }">
+        <span class="seed-mono">{{ row.code || '-' }}</span>
+      </template>
       <template #type="{ row }">
-        <ElTag :type="row.type === 'menu' ? 'primary' : 'info'" size="small">
+        <span
+          :class="row.type === 'menu' ? 'seed-chip--primary' : 'seed-chip'"
+          class="seed-chip"
+        >
           {{ row.type === 'menu' ? '菜单' : '按钮' }}
-        </ElTag>
+        </span>
+      </template>
+      <template #visible="{ row }">
+        <span
+          :class="
+            row.visible === 0 ? 'seed-chip--danger' : 'seed-chip--success'
+          "
+          class="seed-chip"
+        >
+          {{ row.visible === 0 ? '隐藏' : '显示' }}
+        </span>
       </template>
       <template #operation="{ row }">
         <ElButton

@@ -47,20 +47,38 @@ const formOptions: VbenFormProps = {
 };
 
 const gridOptions: VxeGridProps<OperationLog> = {
+  align: 'left',
   columns: [
-    { title: '序号', type: 'seq', width: 60 },
-    { field: 'description', minWidth: 160, title: '操作描述' },
-    { field: 'type', minWidth: 100, title: '操作类型' },
-    { field: 'refModule', minWidth: 120, title: '模块' },
-    { field: 'requestUri', minWidth: 180, title: '请求地址' },
-    { field: 'httpMethod', minWidth: 90, title: '方法' },
-    { field: 'userId', minWidth: 90, title: '用户ID' },
+    { field: 'description', minWidth: 180, title: '操作描述' },
+    {
+      field: 'type',
+      minWidth: 100,
+      slots: { default: 'type' },
+      title: '操作类型',
+    },
+    {
+      field: 'refModule',
+      minWidth: 120,
+      slots: { default: 'module' },
+      title: '模块',
+    },
+    {
+      field: 'requestUri',
+      minWidth: 200,
+      showOverflow: 'tooltip',
+      title: '请求地址',
+    },
+    {
+      field: 'httpMethod',
+      minWidth: 90,
+      slots: { default: 'method' },
+      title: '方法',
+    },
     { field: 'clientIp', minWidth: 130, title: '客户端IP' },
     {
       field: 'costTime',
-      formatter: ({ cellValue }: { cellValue: any }) =>
-        cellValue === undefined ? '-' : `${cellValue}ms`,
       minWidth: 100,
+      slots: { default: 'cost' },
       title: '耗时',
     },
     {
@@ -94,14 +112,55 @@ const gridOptions: VxeGridProps<OperationLog> = {
     },
     response: { list: 'list', result: 'list', total: 'total' },
   },
-  toolbarConfig: { search: true } as any,
 };
 
 const [Grid] = useVbenVxeGrid({ formOptions, gridOptions });
+
+/** 操作类型中文名 */
+const TYPE_TEXT: Record<string, string> = {
+  create: '新增',
+  delete: '删除',
+  read: '查询',
+  update: '修改',
+};
+
+const TYPE_CLASS: Record<string, string> = {
+  create: 'seed-chip--success',
+  delete: 'seed-chip--danger',
+  read: 'seed-chip--primary',
+  update: 'seed-chip--warning',
+};
 </script>
 
 <template>
-  <Page auto-content-height>
-    <Grid />
+  <Page
+    auto-content-height
+    description="记录关键业务操作，包含请求地址、耗时与结果"
+    title="操作日志"
+  >
+    <Grid :separator="false" class="seed-table">
+      <template #type="{ row }">
+        <span :class="TYPE_CLASS[row.type ?? ''] ?? ''" class="seed-chip">
+          {{ TYPE_TEXT[row.type ?? ''] ?? row.type ?? '-' }}
+        </span>
+      </template>
+      <template #module="{ row }">
+        <span v-if="row.refModule" class="seed-mono">{{ row.refModule }}</span>
+        <span v-else class="seed-muted">-</span>
+      </template>
+      <template #method="{ row }">
+        <span class="seed-chip">{{ row.httpMethod ?? '-' }}</span>
+      </template>
+      <template #cost="{ row }">
+        <span
+          v-if="row.costTime !== undefined && row.costTime !== null"
+          :class="row.costTime > 1000 ? 'seed-chip--danger' : ''"
+          class="seed-chip"
+        >
+          {{ row.costTime }}ms
+        </span>
+        <span v-else class="seed-muted">-</span>
+      </template>
+    </Grid>
   </Page>
 </template>

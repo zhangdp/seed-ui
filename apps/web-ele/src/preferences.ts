@@ -20,4 +20,8 @@ export const overridesPreferences = defineOverridesPreferences({
     loginExpiredMode: 'modal',
   },
   copyright: appCopyrightPreferences,
+  theme: {
+    // 产品默认亮色，用户仍可自行切换暗色
+    mode: 'light',
+  },
 });
