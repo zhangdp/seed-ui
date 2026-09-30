@@ -11,16 +11,24 @@
   --seed-radius-sm: 10px;
   --seed-card: var(--card, #fff);
   --seed-border: var(--border, rgba(15, 23, 42, 0.08));
-  --seed-border-soft: color-mix(in srgb, var(--border, #94a3b8) 55%, transparent);
+  --seed-border-soft: color-mix(
+    in srgb,
+    var(--border, #94a3b8) 55%,
+    transparent
+  );
   --seed-muted: var(--muted-foreground, #6b7280);
   --seed-title: var(--foreground, #0f172a);
   --seed-body: color-mix(in srgb, var(--foreground, #0f172a) 88%, transparent);
   --seed-subtle: color-mix(in srgb, var(--foreground, #0f172a) 4%, transparent);
   --seed-hover: color-mix(in srgb, var(--primary, #4f6ef7) 7%, transparent);
   --seed-brand: var(--primary, #4f6ef7);
-  --seed-brand-soft: color-mix(in srgb, var(--primary, #4f6ef7) 14%, transparent);
-  --seed-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
-    0 10px 30px -18px rgba(15, 23, 42, 0.25);
+  --seed-brand-soft: color-mix(
+    in srgb,
+    var(--primary, #4f6ef7) 14%,
+    transparent
+  );
+  --seed-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 30px -18px rgba(15, 23, 42, 0.25);
 
   /* 语义色（亮/暗主题下都可读） */
   --seed-success: #16a374;
@@ -35,8 +43,8 @@
   --seed-success: #34d399;
   --seed-danger: #f87171;
   --seed-warning: #fbbf24;
-  --seed-shadow: 0 1px 2px rgba(0, 0, 0, 0.2),
-    0 10px 30px -18px rgba(0, 0, 0, 0.6);
+  --seed-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2), 0 10px 30px -18px rgba(0, 0, 0, 0.6);
 }
 
 /* ------------------------------- 页面容器 ------------------------------- */
@@ -175,6 +183,38 @@
   background: var(--seed-brand) !important;
   border-color: var(--seed-brand) !important;
   color: #fff !important;
+}
+
+/* 游标分页：后端不支持按页码跳转，隐藏页码/首页/末页/跳转，
+   只保留「共 N 条 + 上一页 / 下一页」的顺序翻页 */
+.seed-cursor-pager .vxe-pager--home-btn,
+.seed-cursor-pager .vxe-pager--end-btn,
+.seed-cursor-pager .vxe-pager--jump-prev,
+.seed-cursor-pager .vxe-pager--jump-next,
+.seed-cursor-pager .vxe-pager--jump-btn,
+.seed-cursor-pager .vxe-pager--num-btn,
+.seed-cursor-pager .vxe-pager--sizes {
+  display: none !important;
+}
+
+.seed-cursor-pager .vxe-pager--prev-btn,
+.seed-cursor-pager .vxe-pager--next-btn {
+  min-width: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--seed-border);
+  background: transparent;
+  color: var(--seed-body);
+}
+
+.seed-cursor-pager .vxe-pager--prev-btn:hover:not(.is--disabled),
+.seed-cursor-pager .vxe-pager--next-btn:hover:not(.is--disabled) {
+  border-color: var(--seed-brand);
+  color: var(--seed-brand);
+}
+
+.seed-cursor-pager .vxe-pager--prev-btn.is--disabled,
+.seed-cursor-pager .vxe-pager--next-btn.is--disabled {
+  opacity: 0.45;
 }
 
 /* 空状态 */

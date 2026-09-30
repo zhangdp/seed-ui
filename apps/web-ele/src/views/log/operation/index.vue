@@ -7,8 +7,11 @@ import { Page } from '@vben/common-ui';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getOperationLogPageApi } from '#/api';
+import { useCursorPager } from '#/utils/cursor-pager';
 
 defineOptions({ name: 'LogOperation' });
+
+const cursorPager = useCursorPager();
 
 const formOptions: VbenFormProps = {
   collapsed: false,
@@ -97,17 +100,23 @@ const gridOptions: VxeGridProps<OperationLog> = {
           string,
           any
         >;
-        return await getOperationLogPageApi({
+        const currentPage = page.currentPage as number;
+        const size = page.pageSize as number;
+        // 后端为游标分页：首页不传游标，之后每页传上一页最后一条的 id
+        const data = await getOperationLogPageApi({
           countTotal: true,
+          cursor: cursorPager.cursorOf(currentPage),
           desc: true,
-          page: page.currentPage,
+          page: currentPage,
           params: {
             ...rest,
             endTime: timeRange?.[1],
             startTime: timeRange?.[0],
           },
-          size: page.pageSize,
+          size,
         });
+        cursorPager.remember(currentPage, data?.list ?? []);
+        return data;
       },
     },
     response: { list: 'list', result: 'list', total: 'total' },
@@ -138,7 +147,7 @@ const TYPE_CLASS: Record<string, string> = {
     description="记录关键业务操作，包含请求地址、耗时与结果"
     title="操作日志"
   >
-    <Grid :separator="false" class="seed-table">
+    <Grid :separator="false" class="seed-table seed-cursor-pager">
       <template #type="{ row }">
         <span :class="TYPE_CLASS[row.type ?? ''] ?? ''" class="seed-chip">
           {{ TYPE_TEXT[row.type ?? ''] ?? row.type ?? '-' }}
